@@ -4,7 +4,6 @@ import ao.marco.kotlin.nasaoffline.datasource.state.ImageFailState
 import ao.marco.kotlin.nasaoffline.datasource.state.ImageInitialState
 import ao.marco.kotlin.nasaoffline.datasource.state.ImageState
 import ao.marco.kotlin.nasaoffline.datasource.state.ImageSuccessState
-import ao.marco.kotlin.nasaoffline.model.IImageModel
 import ao.marco.kotlin.nasaoffline.model.IPhotoModel
 import ao.marco.kotlin.nasaoffline.model.ImageModel
 import ao.marco.kotlin.nasaoffline.model.PhotoModel
@@ -30,12 +29,12 @@ class HomeDatasource(private var provider: INetworkProvider) {
                 state = ImageFailState(message = it)
             }
         }
-        return state;
+        return state
     }
 
     suspend fun getPhotos(): ImageState {
         var state: ImageState = ImageInitialState()
-        var list = mutableListOf<IPhotoModel>()
+        val list = mutableListOf<IPhotoModel>()
         val json = provider.get(
             path = "/mars-photos/api/v1/rovers/curiosity/photos",
             headers = mapOf(),
@@ -43,7 +42,6 @@ class HomeDatasource(private var provider: INetworkProvider) {
         )
         if (json.body != null) {
             json.body?.let { element ->
-                println(element)
                 (element["photos"] as List<*>).map {
                     (it as? Map<*, *>)?.let { map -> list.add(PhotoModel.fromJson(map)) }
                 }

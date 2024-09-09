@@ -124,7 +124,7 @@ class HomePage() {
             var state: ImageState by remember {
                 mutableStateOf(ImageInitialState())
             }
-            val coroutine = rememberCoroutineScope();
+            val coroutine = rememberCoroutineScope()
             LaunchedEffect(key1 = datasource) {
                 if (state !is ImageSuccessState) {
                     coroutine.launch {
@@ -165,7 +165,6 @@ class HomePage() {
                         )
                     }
                     if (state is ImageSuccessState) {
-                        println((state as ImageSuccessState).imageModel?.url)
                         AsyncImage(
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop,
@@ -190,7 +189,7 @@ class HomePage() {
                 }
             )
             if (state is ImageSuccessState) {
-                val model = (state as ImageSuccessState).imageModel;
+                val model = (state as ImageSuccessState).imageModel
                 model?.title?.let {
                     Text(
                         text = it,
@@ -218,7 +217,7 @@ class HomePage() {
             var state: ImageState by remember {
                 mutableStateOf(ImageInitialState())
             }
-            val coroutine = rememberCoroutineScope();
+            val coroutine = rememberCoroutineScope()
             Column {
                 LaunchedEffect(key1 = datasource) {
                     if (state !is ImageSuccessState) {
