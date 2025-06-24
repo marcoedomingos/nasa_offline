@@ -4,13 +4,13 @@ import ao.marco.kotlin.nasaoffline.datasource.state.ImageFailState
 import ao.marco.kotlin.nasaoffline.datasource.state.ImageInitialState
 import ao.marco.kotlin.nasaoffline.datasource.state.ImageState
 import ao.marco.kotlin.nasaoffline.datasource.state.ImageSuccessState
-import ao.marco.kotlin.nasaoffline.model.IPhotoModel
 import ao.marco.kotlin.nasaoffline.model.ImageModel
 import ao.marco.kotlin.nasaoffline.model.PhotoModel
+import ao.marco.kotlin.nasaoffline.model.SuccessResponse
 import ao.marco.kotlin.nasaoffline.provider.INetworkProvider
 
 class HomeDatasource(private var provider: INetworkProvider) {
-    private val apiKey = ""
+    private val apiKey = "Your-API-KEY"
 
     suspend fun getImage(): ImageState {
         var state: ImageState = ImageInitialState()
@@ -20,7 +20,7 @@ class HomeDatasource(private var provider: INetworkProvider) {
             query = mapOf("api_key" to apiKey)
         )
 
-        if (json.body != null) {
+        if (json is SuccessResponse) {
             json.body?.let {
                 state = ImageSuccessState(imageModel = ImageModel.fromJson(it))
             }
@@ -34,13 +34,13 @@ class HomeDatasource(private var provider: INetworkProvider) {
 
     suspend fun getPhotos(): ImageState {
         var state: ImageState = ImageInitialState()
-        val list = mutableListOf<IPhotoModel>()
+        val list = mutableListOf<PhotoModel>()
         val json = provider.get(
             path = "/mars-photos/api/v1/rovers/curiosity/photos",
             headers = mapOf(),
             query = mapOf("api_key" to apiKey, "sol" to "1000")
         )
-        if (json.body != null) {
+        if (json is SuccessResponse) {
             json.body?.let { element ->
                 (element["photos"] as List<*>).map {
                     (it as? Map<*, *>)?.let { map -> list.add(PhotoModel.fromJson(map)) }

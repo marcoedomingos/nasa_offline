@@ -1,29 +1,27 @@
 package ao.marco.kotlin.nasaoffline.model
 
-interface IImageModel {
-    var url: String?;
-    var hdUrl: String?;
-    var title: String?;
-    var date: String?;
-    var explanation: String?;
-}
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 
-class ImageModel(
-    override var url: String?,
-    override var hdUrl: String?,
-    override var title: String?,
-    override var date: String?,
-    override var explanation: String?
-) :IImageModel {
+@Entity
+data class ImageModel(
+    @PrimaryKey(autoGenerate = true) var id: Int = 0,
+    @ColumnInfo( name = "url") var url: String?,
+    @ColumnInfo( name = "hdUrl") var hdUrl: String?,
+    @ColumnInfo( name = "title") var title: String?,
+    @ColumnInfo( name = "date") var date: String?,
+    @ColumnInfo( name = "explanation") var explanation: String?
+) {
     companion object {
-        fun fromJson(map: Map<String, Any>): IImageModel {
+        fun fromJson(map: Map<String, Any>): ImageModel {
             return ImageModel(
                 url = map["url"].toString(),
                 hdUrl = map["hdurl"].toString(),
                 title = map["title"].toString(),
                 date = map["date"].toString(),
                 explanation = map["explanation"].toString(),
-            );
+            )
         }
     }
 }

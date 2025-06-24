@@ -1,6 +1,9 @@
-package ao.marco.kotlin.nasaoffline.ui.theme
+package ao.marco.kotlin.nasaoffline.ui.pages
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Card
@@ -28,12 +32,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,6 +45,8 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+import ao.marco.kotlin.nasaoffline.R
+import ao.marco.kotlin.nasaoffline.database.AppDatabase
 import ao.marco.kotlin.nasaoffline.datasource.HomeDatasource
 import ao.marco.kotlin.nasaoffline.datasource.state.ImageFailState
 import ao.marco.kotlin.nasaoffline.datasource.state.ImageInitialState
@@ -48,46 +54,73 @@ import ao.marco.kotlin.nasaoffline.datasource.state.ImageLoadingState
 import ao.marco.kotlin.nasaoffline.datasource.state.ImageState
 import ao.marco.kotlin.nasaoffline.datasource.state.ImageSuccessState
 import ao.marco.kotlin.nasaoffline.provider.NetworkProvider
+import ao.marco.kotlin.nasaoffline.ui.Details
+import ao.marco.kotlin.nasaoffline.ui.NavigateController
 import coil.compose.AsyncImage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class HomePage() {
-    companion object {
+class HomePage {
 
+    companion object {
         @Composable
-        fun Body(paddingValues: PaddingValues, fontFamily: FontFamily) {
+        fun Body(paddingValues: PaddingValues, fontFamily: FontFamily, db: AppDatabase) {
             val datasource = HomeDatasource(provider = NetworkProvider())
             Column(
                 modifier = Modifier
                     .padding(paddingValues)
-                    .padding(horizontal = 12.dp),
+                    .padding(horizontal = 18.dp),
                 content = {
+                    Spacer(modifier = Modifier.height(10.dp))
                     HeaderComponent(fontFamily = fontFamily)
                     Spacer(modifier = Modifier.height(10.dp))
                     SearchComponent()
-                    Spacer(modifier = Modifier.height(20.dp))
-                    SpotlightComponent(fontFamily = fontFamily, datasource = datasource)
-                    Spacer(modifier = Modifier.height(20.dp))
-                    ExploreComponent(fontFamily = fontFamily, datasource = datasource)
+                    Column(
+                        modifier = Modifier
+                            .verticalScroll(enabled = true, state = ScrollState(10)),
+                        content = {
+                            Spacer(modifier = Modifier.height(80.dp))
+                            SpotlightComponent(
+                                fontFamily = fontFamily,
+                                datasource = datasource,
+                                db = db
+                            )
+                            Spacer(modifier = Modifier.height(80.dp))
+                            ExploreComponent(
+                                fontFamily = fontFamily,
+                                datasource = datasource,
+                                db = db
+                            )
+                            Spacer(modifier = Modifier.height(80.dp))
+                        }
+                    )
                 }
             )
         }
 
         @Composable
         private fun HeaderComponent(fontFamily: FontFamily) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                content = {
-                    Text(
-                        color = Color(0xFFFFFFFF),
-                        fontSize = TextUnit(24F, TextUnitType.Sp),
-                        fontFamily = fontFamily,
-                        text = "HOME"
-                    )
-                }
-            )
+            Box(modifier = Modifier.height(64.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = {
+                        Text(
+                            color = Color(0xFFFFFFFF),
+                            fontSize = TextUnit(24F, TextUnitType.Sp),
+                            fontFamily = fontFamily,
+                            text = "HOME"
+                        )
+                        Image(
+                            painter = painterResource(R.drawable.logo),
+                            contentDescription = null,
+                        )
+                    }
+                )
+            }
         }
 
         @Composable
@@ -120,17 +153,24 @@ class HomePage() {
         private fun SpotlightComponent(
             fontFamily: FontFamily,
             datasource: HomeDatasource,
+            db: AppDatabase,
         ) {
             var state: ImageState by remember {
                 mutableStateOf(ImageInitialState())
             }
-            val coroutine = rememberCoroutineScope()
             LaunchedEffect(key1 = datasource) {
                 if (state !is ImageSuccessState) {
-                    coroutine.launch {
-                        state = ImageLoadingState()
-                        datasource.getImage().let {
+                    state = ImageLoadingState()
+                    db.imageDao().getImage().let {
+                        state = ImageSuccessState(imageModel = it)
+                    }
+
+                    datasource.getImage().let {
+                        if (it is ImageSuccessState) {
                             state = it
+                            CoroutineScope(Dispatchers.IO).launch {
+                                db.imageDao().insert((state as ImageSuccessState).imageModel!!)
+                            }
                         }
                     }
                 }
@@ -173,7 +213,7 @@ class HomePage() {
                             contentDescription = (state as ImageSuccessState).imageModel?.title
                         )
                     }
-                    if(state is ImageFailState){
+                    if (state is ImageFailState) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center,
@@ -182,7 +222,8 @@ class HomePage() {
                                     fontSize = TextUnit(22F, TextUnitType.Unspecified),
                                     textAlign = TextAlign.Center,
                                     color = Color.White,
-                                    text = "No image available")
+                                    text = "No image available"
+                                )
                             }
                         )
                     }
@@ -213,18 +254,28 @@ class HomePage() {
         private fun ExploreComponent(
             fontFamily: FontFamily,
             datasource: HomeDatasource,
+            db: AppDatabase,
         ) {
             var state: ImageState by remember {
                 mutableStateOf(ImageInitialState())
             }
-            val coroutine = rememberCoroutineScope()
             Column {
                 LaunchedEffect(key1 = datasource) {
                     if (state !is ImageSuccessState) {
-                        coroutine.launch {
-                            state = ImageLoadingState()
-                            datasource.getPhotos().let {
+                        state = ImageLoadingState()
+                        db.photoDao().getPhotos().let {
+                            state = ImageSuccessState(photos = it)
+                        }
+
+                        datasource.getPhotos().let {
+
+                            if (it is ImageSuccessState) {
                                 state = it
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    (state as ImageSuccessState).photos.forEach { photo ->
+                                        db.photoDao().insert(photo)
+                                    }
+                                }
                             }
                         }
                     }
@@ -246,8 +297,8 @@ class HomePage() {
                         },
                     )
                 }
-                if(state is ImageSuccessState){
-                    (state as ImageSuccessState).photos?.let {
+                if (state is ImageSuccessState) {
+                    (state as ImageSuccessState).photos.let {
                         LazyRow(
                             modifier = Modifier.size(Constraints.Infinity.dp, 250.dp),
                             content = {
@@ -255,11 +306,17 @@ class HomePage() {
                                     Column(
                                         modifier = Modifier
                                             .size(180.dp, 250.dp)
-                                            .padding(end = 20.dp),
+                                            .padding(end = 20.dp)
+                                            .clickable {
+                                                NavigateController.navController!!.navigate(Details.route)
+                                            },
                                     ) {
                                         Card(
                                             modifier = Modifier.size(180.dp, 180.dp),
-                                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.4F)),
+                                            border = BorderStroke(
+                                                1.dp,
+                                                Color.White.copy(alpha = 0.4F)
+                                            ),
                                             shape = RoundedCornerShape(8.dp),
                                             colors = CardColors(
                                                 containerColor = Color.Gray.copy(alpha = 0.1F),
@@ -271,7 +328,10 @@ class HomePage() {
                                                 AsyncImage(
                                                     modifier = Modifier.fillMaxSize(),
                                                     contentScale = ContentScale.Crop,
-                                                    model = it[it1].imgSrc?.replace("http", "https"),
+                                                    model = it[it1].imgSrc?.replace(
+                                                        "http",
+                                                        "https"
+                                                    ),
                                                     alignment = Alignment.Center,
                                                     contentDescription = it[it1].fullName
                                                 )
@@ -296,7 +356,7 @@ class HomePage() {
                     }
                 }
 
-                if(state is ImageFailState){
+                if (state is ImageFailState) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center,
@@ -305,7 +365,8 @@ class HomePage() {
                                 fontSize = TextUnit(22F, TextUnitType.Unspecified),
                                 textAlign = TextAlign.Center,
                                 color = Color.White,
-                                text = "No image available")
+                                text = "No image available"
+                            )
                         }
                     )
                 }

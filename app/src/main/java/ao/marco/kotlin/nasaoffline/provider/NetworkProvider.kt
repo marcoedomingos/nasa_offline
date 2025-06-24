@@ -1,8 +1,9 @@
 package ao.marco.kotlin.nasaoffline.provider
 
 import ao.marco.kotlin.nasaoffline.BuildConfig
-import ao.marco.kotlin.nasaoffline.model.INetworkResponseModel
+import ao.marco.kotlin.nasaoffline.model.FailedResponse
 import ao.marco.kotlin.nasaoffline.model.NetworkResponseModel
+import ao.marco.kotlin.nasaoffline.model.SuccessResponse
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +17,7 @@ interface INetworkProvider {
         path: String,
         headers: Map<String, Any>?,
         query: Map<String, Any>?
-    ): INetworkResponseModel
+    ): NetworkResponseModel
 }
 
 class NetworkProvider : INetworkProvider {
@@ -25,7 +26,7 @@ class NetworkProvider : INetworkProvider {
         path: String,
         headers: Map<String, Any>?,
         query: Map<String, Any>?
-    ): INetworkResponseModel {
+    ): NetworkResponseModel {
         try {
             return withContext(Dispatchers.IO) {
                 client.newCall(executeRequest(path, headers = headers, query = query)).execute()
@@ -34,17 +35,17 @@ class NetworkProvider : INetworkProvider {
                         val type = object : TypeToken<Map<String, Any>>() {}.type
                         val response: Map<String, Any> = gson.fromJson(it.body?.charStream(), type)
                         if (response.containsKey("error")) {
-                            return@use NetworkResponseModel(message = (response["error"] as Map<*, *>)["message"].toString())
+                            return@use FailedResponse(message = (response["error"] as Map<*, *>)["message"].toString())
                         } else {
-                            return@use NetworkResponseModel(body = response)
+                            return@use SuccessResponse(body = response)
                         }
                     }
             }
         } catch (e: Exception) {
             return if (e is SocketException) {
-                NetworkResponseModel(message = "Connection fail");
+                FailedResponse(message = "Connection fail")
             } else {
-                NetworkResponseModel(message = "Unknown Error");
+                FailedResponse(message = "Unknown Error")
             }
         }
     }

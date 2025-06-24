@@ -1,13 +1,10 @@
 package ao.marco.kotlin.nasaoffline.model
 
-interface INetworkResponseModel {
-    val message: String?
+abstract class NetworkResponseModel(
+    val message: String?,
     val body: Map<String, Any>?
-}
+)
 
-class NetworkResponseModel(
-    override val message: String? = null,
-    override val body: Map<String, Any>? = null,
-) :
-    INetworkResponseModel {
-}
+class SuccessResponse(body: Map<String, Any>) : NetworkResponseModel(null, body)
+
+class FailedResponse(message: String) : NetworkResponseModel(message, null)
