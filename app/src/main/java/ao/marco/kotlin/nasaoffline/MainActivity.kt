@@ -18,9 +18,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import androidx.room.Room
 import ao.marco.kotlin.nasaoffline.database.AppDatabase
 import ao.marco.kotlin.nasaoffline.ui.Home
@@ -72,7 +74,9 @@ class MainActivity : ComponentActivity() {
                 composable(route = Home.route) {
                     Home.screen(paddingValues, fontFamily, 0, db)
                 }
-                composable(route = Details.route)  {
+                composable(route = Details.route, arguments = listOf(navArgument(name = "data"){
+                    type = NavType.IntType
+                }))  {
                     it.arguments?.getInt("data")
                         ?.let { it1 -> Details.screen(paddingValues, fontFamily, it1, db) }
                 }

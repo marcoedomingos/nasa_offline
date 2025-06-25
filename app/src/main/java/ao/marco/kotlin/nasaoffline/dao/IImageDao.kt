@@ -13,4 +13,7 @@ interface IImageDao {
 
     @Insert
     suspend fun insert(vararg image: ImageModel)
+
+    @Query("DELETE FROM imagemodel")
+    suspend fun deleteAll()
 }

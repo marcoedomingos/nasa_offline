@@ -30,13 +30,11 @@ object Home : Routes {
 }
 
 object Details : Routes {
-    override val route = "details/:id"
+    override val route = "details/{data}"
     override val screen: @Composable (paddingValue: PaddingValues, fontFamily: FontFamily, params: Int, db: AppDatabase?) -> Unit =
         { paddingValues, fontFamily, params, db ->
             DetailPage(
                 paddingValues = paddingValues,
-                fontFamily = fontFamily,
-                data = params,
                 db = db!!,
             )
         }

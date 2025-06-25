@@ -1,5 +1,6 @@
 package ao.marco.kotlin.nasaoffline.ui.pages
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
@@ -39,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
@@ -86,7 +88,7 @@ class HomePage {
                                 datasource = datasource,
                                 db = db
                             )
-                            Spacer(modifier = Modifier.height(80.dp))
+                            Spacer(modifier = Modifier.height(40.dp))
                             ExploreComponent(
                                 fontFamily = fontFamily,
                                 datasource = datasource,
@@ -167,8 +169,9 @@ class HomePage {
 
                     datasource.getImage().let {
                         if (it is ImageSuccessState) {
-                            state = it
                             CoroutineScope(Dispatchers.IO).launch {
+                                db.imageDao().deleteAll()
+                                state = it
                                 db.imageDao().insert((state as ImageSuccessState).imageModel!!)
                             }
                         }
@@ -247,6 +250,23 @@ class HomePage {
                         overflow = TextOverflow.Ellipsis
                     )
                 }
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "Read more...",
+                    color = Color.White.copy(alpha = 0.8F),
+                    modifier = Modifier.padding(top = 2.dp)
+                        .clickable {
+                            NavigateController.navController!!.navigate(
+                                Details.route.replace(
+                                    "{data}",
+                                    model?.id.toString()
+                                )
+                            )
+                        },
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
 
@@ -270,8 +290,10 @@ class HomePage {
                         datasource.getPhotos().let {
 
                             if (it is ImageSuccessState) {
-                                state = it
                                 CoroutineScope(Dispatchers.IO).launch {
+                                    db.photoDao().deleteAll()
+                                    state = it
+                                    Log.e("Data", "Data ${(state as ImageSuccessState).photos[0].imgSrc}")
                                     (state as ImageSuccessState).photos.forEach { photo ->
                                         db.photoDao().insert(photo)
                                     }
@@ -306,10 +328,7 @@ class HomePage {
                                     Column(
                                         modifier = Modifier
                                             .size(180.dp, 250.dp)
-                                            .padding(end = 20.dp)
-                                            .clickable {
-                                                NavigateController.navController!!.navigate(Details.route)
-                                            },
+                                            .padding(end = 20.dp),
                                     ) {
                                         Card(
                                             modifier = Modifier.size(180.dp, 180.dp),
