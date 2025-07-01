@@ -15,7 +15,6 @@ class PhotoModel(
 ) {
     companion object {
         fun fromJson(map: Map<*, *>): PhotoModel{
-            Log.d("Data", map.toString())
             return PhotoModel(
                 imgSrc = map["img_src"].toString(),
                 fullName = (map["camera"] as Map<*, *>)["full_name"].toString(),
